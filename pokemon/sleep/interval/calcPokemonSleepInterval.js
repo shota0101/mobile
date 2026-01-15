@@ -104,8 +104,8 @@ function saveResultToFile({
 
 ■ 補正
 性格補正: ×${input.personalityMultiplier}
-サブスキル 食材確率アップM: ${input.hasSkillM ? "あり" : "なし"}（×${input.skillMMultiplier}）
-サブスキル 食材確率アップS: ${input.hasSkillS ? "あり" : "なし"}（×${input.skillSMultiplier}）
+サブスキル 食材確率アップM: ${input.hasM ? "あり" : "なし"}（×${input.skillMMultiplier}）
+サブスキル 食材確率アップS: ${input.hasS ? "あり" : "なし"}（×${input.skillSMultiplier}）
 
 最終食材確率: ${(result.finalIngredientRate * 100).toFixed(2)}%
 
