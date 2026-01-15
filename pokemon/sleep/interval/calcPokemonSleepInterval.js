@@ -5,6 +5,18 @@ const fs = require("fs");
 const readlineSync = require("readline-sync");
 const { AutoComplete } = require("enquirer");
 
+const 性格補正倍率 = {
+  無し: 1.0,
+  上昇: 1.2,
+  下降: 0.8,
+};
+
+const サブスキル補正倍率 = {
+  M: 1.36,
+  S: 1.18,
+};
+
+
 /**
  * TSVを読み込んでポケモン情報を作る
  */
@@ -62,10 +74,33 @@ async function selectPokemon(pokemons) {
 
   // --- ポケモン選択 ---
   const pokemon = await selectPokemon(pokemons);
-  const 食材確率 = pokemon.食材確率;
 
   console.log(`\n選択されたポケモン: ${pokemon.name}`);
-  console.log(`食材確率: ${(食材確率 * 100).toFixed(2)}%\n`);
+
+  const 性格選択 = readlineSync.keyInSelect(
+    ["無し","上昇", "下降"],
+    "性格による食材確率補正を選択してください"
+  );
+
+  const 性格補正 =
+	性格選択 === -1
+	? 性格補正倍率["無し"]
+	: 性格補正倍率[["無し", "上昇", "下降"][性格選択]];
+
+  const hasM = readlineSync.keyInYN("サブスキル「食材確率アップM」は付いていますか？");
+  const hasS = readlineSync.keyInYN("サブスキル「食材確率アップS」は付いていますか？");
+  
+  const サブスキルM補正 = hasM ? サブスキル補正倍率.M : 1.0;
+  const サブスキルS補正 = hasS ? サブスキル補正倍率.S : 1.0;
+
+  const 食材確率 =
+	pokemon.食材確率 *
+	性格補正 *
+	サブスキルM補正 *
+	サブスキルS補正;
+
+  console.log(`食材確率（ベース）: ${(pokemon.食材確率 * 100).toFixed(2)}%`);
+  console.log(`食材確率（補正後）: ${(食材確率 * 100).toFixed(2)}%`);
 
   // --- 数値入力 ---
   const 最大所持数 = readlineSync.questionFloat("最大所持数を入力してください: ");
