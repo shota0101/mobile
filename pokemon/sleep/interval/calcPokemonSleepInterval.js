@@ -68,9 +68,69 @@ async function selectPokemon(pokemons) {
   return await prompt.run();
 }
 
+/**
+ * 計算結果をファイルに保存する
+ *
+ * @param {Object} params
+ * @param {string} params.pokemonName - ポケモン名
+ * @param {number} params.totalMinutes - 合計分（小数）
+ * @param {number} params.maxCapacity - 最大所持数
+ * @param {Object} params.input - 入力値まとめ
+ * @param {Object} params.result - 計算結果まとめ
+ */
+function saveResultToFile({
+  pokemonName,
+  totalMinutes,
+  maxCapacity,
+  input,
+  result,
+}) {
+  // ファイル名用：分は四捨五入
+  const roundedMinutes = Math.round(totalMinutes);
+  
+  const sanitizeFileName = (str) =>
+    str.replace(/[\\\/:*?"<>|]/g, "_");
+
+  const fileName = sanitizeFileName(
+    `${roundedMinutes}分_${pokemonName}_${maxCapacity}.txt`
+  );
+
+  const text = `
+=== ポケモンスリープ 所持数計算ログ ===
+
+■ ポケモン
+名前: ${pokemonName}
+ベース食材確率: ${(input.baseIngredientRate * 100).toFixed(2)}%
+
+■ 補正
+性格補正: ×${input.personalityMultiplier}
+サブスキル 食材確率アップM: ${input.hasSkillM ? "あり" : "なし"}（×${input.skillMMultiplier}）
+サブスキル 食材確率アップS: ${input.hasSkillS ? "あり" : "なし"}（×${input.skillSMultiplier}）
+
+最終食材確率: ${(result.finalIngredientRate * 100).toFixed(2)}%
+
+■ 入力値
+最大所持数: ${maxCapacity}
+速度: ${input.speed}
+食材の個数: ${input.ingredientCount}
+きのみの個数: ${input.berryCount}
+
+■ 計算結果
+1回あたりの獲得数: ${result.itemsPerHelp.toFixed(4)}
+合計時間: ${totalMinutes.toFixed(2)} 分
+時間換算: ${result.hours} 時間 ${result.minutes.toFixed(2)} 分
+
+====================================
+`.trim() + "\n";
+
+  fs.writeFileSync(fileName, text, "utf8");
+
+  return fileName;
+}
+
 (async function main() {
   const pokemons = loadPokemons("./estimatedValueTable.tsv");
-
+  
   // --- ポケモン選択 ---
   const pokemon = await selectPokemon(pokemons);
 
@@ -116,4 +176,30 @@ async function selectPokemon(pokemons) {
 
   console.log(`分（合計）: ${分.toFixed(2)} 分`);
   console.log(`時間換算: ${時間} 時間 ${分残り.toFixed(2)} 分`);
+
+  const savedFile = saveResultToFile({
+    pokemonName: pokemon.name,
+    totalMinutes: 分,
+    maxCapacity: 最大所持数,
+    input: {
+      baseIngredientRate: pokemon.食材確率,
+      personalityMultiplier: 性格補正,
+      hasM,
+      hasS,
+      skillMMultiplier: サブスキルM補正,
+      skillSMultiplier: サブスキルS補正,
+      speed: 速度,
+      ingredientCount: 食材の個数,
+      berryCount: きのみの個数,
+    },
+    result: {
+      finalIngredientRate: 食材確率,
+      itemsPerHelp: 一回あたりの個数,
+      hours: 時間,
+      minutes: 分残り,
+    },
+  });
+  
+  console.log(`📄 結果を保存しました: ${savedFile}`);
 })();
+
