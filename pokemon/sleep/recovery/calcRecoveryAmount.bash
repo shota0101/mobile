@@ -14,8 +14,8 @@ recovery_bonus=$((recovery * 114 / 100)) # 元気回復ボーナスを考慮
 recovery_nature_downward=$((recovery * 88 / 100)) # 性格補正後（0.88倍 → 88/100 で整数演算）
 recovery_nature_downward_bonus=$((recovery_nature_downward * 114 / 100)) # 性格補正後（0.88倍 → 88/100 で整数演算）
 
-echo "$((100 - recovery)) 補正なしで全回復"
-echo "$((100 - recovery_bonus)) 元気回復ボーナス"
-echo "$((100 - recovery_nature_downward)) 性格下降補正"
-echo "$((100 - recovery_nature_downward_bonus)) 性格下降補正と元気回復ボーナス"
+echo "$((100 - recovery)) %\t補正なしで全回復"
+echo "$((100 - recovery_bonus)) %\t元気回復ボーナス"
+echo "$((100 - recovery_nature_downward)) %\t性格下降補正"
+echo "$((100 - recovery_nature_downward_bonus)) %\t性格下降補正と元気回復ボーナス"
 
