@@ -5,10 +5,13 @@ const fs = require("fs");
 const readlineSync = require("readline-sync");
 const { AutoComplete } = require("enquirer");
 
+/* ===============================
+ * 定数定義
+ * =============================== */
 const 性格補正倍率 = {
-  無し: 1.0,
   上昇: 1.2,
   下降: 0.8,
+  無し: 1.0,
 };
 
 const サブスキル補正倍率 = {
@@ -16,10 +19,9 @@ const サブスキル補正倍率 = {
   S: 1.18,
 };
 
-
-/**
- * TSVを読み込んでポケモン情報を作る
- */
+/* ===============================
+ * TSV 読み込み
+ * =============================== */
 function loadPokemons(path) {
   const tsv = fs.readFileSync(path, "utf8");
 
@@ -29,17 +31,21 @@ function loadPokemons(path) {
     .filter(line => line.length > 0)
     .map((line, index) => {
       const cols = line.split("\t");
-
       const rawProb = cols[2];
 
-      // 食材確率がない or %で終わってない行は無効
+      // 食材確率がない行（例: ピカチュウ(ハロウィン)）は除外
       if (!rawProb || !rawProb.endsWith("%")) {
+        console.error(
+          `WARN: ${index + 1}行目をスキップ（食材確率なし）: ${cols[0]}`
+        );
         return null;
       }
 
       const 食材確率 = Number(rawProb.replace("%", "")) / 100;
-
       if (Number.isNaN(食材確率)) {
+        console.error(
+          `WARN: ${index + 1}行目をスキップ（数値変換失敗）: ${cols[0]}`
+        );
         return null;
       }
 
@@ -51,16 +57,16 @@ function loadPokemons(path) {
     .filter(Boolean);
 }
 
-/**
- * ポケモンをインクリメンタルサーチで選択
- */
+/* ===============================
+ * ポケモン選択
+ * =============================== */
 async function selectPokemon(pokemons) {
   const prompt = new AutoComplete({
     name: "pokemon",
     message: "ポケモンを選択してください",
     limit: 10,
-    choices: pokemons.map((p) => ({
-      name: `${p.name}（食材:${(p.食材確率 * 100).toFixed(1)}%）`,
+    choices: pokemons.map(p => ({
+      name: `${p.name}（食材 ${(p.食材確率 * 100).toFixed(1)}%）`,
       value: p,
     })),
   });
@@ -68,138 +74,116 @@ async function selectPokemon(pokemons) {
   return await prompt.run();
 }
 
-/**
- * 計算結果をファイルに保存する
- *
- * @param {Object} params
- * @param {string} params.pokemonName - ポケモン名
- * @param {number} params.totalMinutes - 合計分（小数）
- * @param {number} params.maxCapacity - 最大所持数
- * @param {Object} params.input - 入力値まとめ
- * @param {Object} params.result - 計算結果まとめ
- */
-function saveResultToFile({
-  pokemonName,
-  totalMinutes,
-  maxCapacity,
-  input,
-  result,
-}) {
-  // ファイル名用：分は四捨五入
-  const roundedMinutes = Math.round(totalMinutes);
-  
+/* ===============================
+ * ファイル保存（引数なし）
+ * =============================== */
+function saveResultToFile() {
+  const roundedMinutes = Math.round(分);
+
   const sanitizeFileName = (str) =>
     str.replace(/[\\\/:*?"<>|]/g, "_");
 
   const fileName = sanitizeFileName(
-    `${roundedMinutes}分_${pokemonName}_${maxCapacity}.txt`
+    `${roundedMinutes}分_${pokemon.name}_${最大所持数}.txt`
   );
 
   const text = `
 === ポケモンスリープ 所持数計算ログ ===
 
 ■ ポケモン
-名前: ${pokemonName}
-ベース食材確率: ${(input.baseIngredientRate * 100).toFixed(2)}%
+名前: ${pokemon.name}
+ベース食材確率: ${(ベース食材確率 * 100).toFixed(2)}%
 
 ■ 補正
-性格補正: ×${input.personalityMultiplier}
-サブスキル 食材確率アップM: ${input.hasM ? "あり" : "なし"}（×${input.skillMMultiplier}）
-サブスキル 食材確率アップS: ${input.hasS ? "あり" : "なし"}（×${input.skillSMultiplier}）
+性格補正: ×${性格補正}
+サブスキル 食材確率アップM: ${hasM ? "あり" : "なし"}（×${サブスキルM補正}）
+サブスキル 食材確率アップS: ${hasS ? "あり" : "なし"}（×${サブスキルS補正}）
 
-最終食材確率: ${(result.finalIngredientRate * 100).toFixed(2)}%
+最終食材確率: ${(食材確率 * 100).toFixed(2)}%
 
 ■ 入力値
-最大所持数: ${maxCapacity}
-速度: ${input.speed}
-食材の個数: ${input.ingredientCount}
-きのみの個数: ${input.berryCount}
+最大所持数: ${最大所持数}
+速度: ${速度}
+食材の個数: ${食材の個数}
+きのみの個数: ${きのみの個数}
 
 ■ 計算結果
-1回あたりの獲得数: ${result.itemsPerHelp.toFixed(4)}
-合計時間: ${totalMinutes.toFixed(2)} 分
-時間換算: ${result.hours} 時間 ${result.minutes.toFixed(2)} 分
+1回あたりの獲得数: ${一回あたりの個数.toFixed(4)}
+合計時間: ${分.toFixed(2)} 分
+時間換算: ${時間} 時間 ${分残り.toFixed(2)} 分
 
 ====================================
 `.trim() + "\n";
 
   fs.writeFileSync(fileName, text, "utf8");
 
-  return fileName;
+  // console 出力はファイル名のみ
+  console.log(fileName);
 }
 
+/* ===============================
+ * main
+ * =============================== */
 (async function main() {
-  const pokemons = loadPokemons("./estimatedValueTable.tsv");
-  
-  // --- ポケモン選択 ---
-  const pokemon = await selectPokemon(pokemons);
+  try {
+    const pokemons = loadPokemons("./estimatedValueTable.tsv");
+    pokemon = await selectPokemon(pokemons);
 
-  console.log(`選択されたポケモン: ${pokemon.name}`);
+    // --- 入力 ---
+    最大所持数 = readlineSync.questionFloat("最大所持数: ");
+    速度 = readlineSync.questionFloat("速度: ");
+    食材の個数 = readlineSync.questionFloat("食材の個数: ");
+    きのみの個数 = readlineSync.questionFloat("きのみの個数: ");
 
-  const 性格選択 = readlineSync.keyInSelect(
-    ["無し","上昇", "下降"],
-    "性格による食材確率補正を選択してください"
-  );
+    // --- 補正 ---
+    const 性格選択 = readlineSync.keyInSelect(
+      ["上昇", "下降", "無し"],
+      "性格による食材確率補正"
+    );
+    性格補正 =
+      性格選択 === -1
+        ? 性格補正倍率.無し
+        : 性格補正倍率[["上昇", "下降", "無し"][性格選択]];
 
-  const 性格補正 =
-	性格選択 === -1
-	? 性格補正倍率["無し"]
-	: 性格補正倍率[["無し", "上昇", "下降"][性格選択]];
+    hasM = readlineSync.keyInYN("サブスキル 食材確率アップM は付いていますか？");
+    hasS = readlineSync.keyInYN("サブスキル 食材確率アップS は付いていますか？");
 
-  const hasM = readlineSync.keyInYN("サブスキル「食材確率アップM」は付いていますか？");
-  const hasS = readlineSync.keyInYN("サブスキル「食材確率アップS」は付いていますか？");
-  
-  const サブスキルM補正 = hasM ? サブスキル補正倍率.M : 1.0;
-  const サブスキルS補正 = hasS ? サブスキル補正倍率.S : 1.0;
+    サブスキルM補正 = hasM ? サブスキル補正倍率.M : 1.0;
+    サブスキルS補正 = hasS ? サブスキル補正倍率.S : 1.0;
 
-  const 食材確率 =
-	pokemon.食材確率 *
-	性格補正 *
-	サブスキルM補正 *
-	サブスキルS補正;
+    // --- 計算 ---
+    ベース食材確率 = pokemon.食材確率;
 
-  console.log(`食材確率（ベース）: ${(pokemon.食材確率 * 100).toFixed(2)}%`);
-  console.log(`食材確率（補正後）: ${(食材確率 * 100).toFixed(2)}%`);
+    食材確率 = Math.min(
+      ベース食材確率 *
+        性格補正 *
+        サブスキルM補正 *
+        サブスキルS補正,
+      1.0
+    );
 
-  const 最大所持数 = readlineSync.questionFloat("最大所持数を入力してください: ");
-  const 速度 = readlineSync.questionFloat("速度を入力してください: ");
-  const 食材の個数 = readlineSync.questionFloat("食材の個数を入力してください: ");
-  const きのみの個数 = readlineSync.questionFloat("きのみの個数を入力してください: ");
+    一回あたりの個数 =
+      食材確率 * 食材の個数 + (1 - 食材確率) * きのみの個数;
 
-  const 一回あたりの個数 =
-    食材確率 * 食材の個数 + (1 - 食材確率) * きのみの個数;
-  console.log(`一回あたりの個数: ${(一回あたりの個数).toFixed(2)}`);
+    分 = (最大所持数 / 一回あたりの個数) * (速度 / 2.222);
+    時間 = Math.floor(分 / 60);
+    分残り = 分 % 60;
 
-  const 分 = (最大所持数 / 一回あたりの個数) * (速度 / 2.222);
-  const 時間 = Math.floor(分 / 60);
-  const 分残り = 分 % 60;
+    // --- 保存 ---
+    saveResultToFile();
 
-  console.log(`分（合計）: ${分.toFixed(2)} 分`);
-  console.log(`時間換算: ${時間} 時間 ${分残り.toFixed(2)} 分`);
-
-  const savedFile = saveResultToFile({
-    pokemonName: pokemon.name,
-    totalMinutes: 分,
-    maxCapacity: 最大所持数,
-    input: {
-      baseIngredientRate: pokemon.食材確率,
-      personalityMultiplier: 性格補正,
-      hasM,
-      hasS,
-      skillMMultiplier: サブスキルM補正,
-      skillSMultiplier: サブスキルS補正,
-      speed: 速度,
-      ingredientCount: 食材の個数,
-      berryCount: きのみの個数,
-    },
-    result: {
-      finalIngredientRate: 食材確率,
-      itemsPerHelp: 一回あたりの個数,
-      hours: 時間,
-      minutes: 分残り,
-    },
-  });
-  
-  console.log(`📄 結果を保存しました: ${savedFile}`);
+  } catch (err) {
+    console.error("ERROR:", err.message);
+    process.exit(1);
+  }
 })();
 
+/* ===============================
+ * グローバル変数（最小限）
+ * =============================== */
+let pokemon;
+let 最大所持数, 速度, 食材の個数, きのみの個数;
+let ベース食材確率, 食材確率;
+let 性格補正, サブスキルM補正, サブスキルS補正;
+let hasM, hasS;
+let 一回あたりの個数, 分, 時間, 分残り;
