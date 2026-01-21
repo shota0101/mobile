@@ -6,7 +6,7 @@ const readlineSync = require("readline-sync");
 const { AutoComplete } = require("enquirer");
 
 /* ===============================
- * 定数定義
+ * 定数
  * =============================== */
 const 性格補正倍率 = {
   上昇: 1.2,
@@ -19,6 +19,8 @@ const サブスキル補正倍率 = {
   S: 1.18,
 };
 
+const おてつだいボーナス補正 = [1.0, 0.95, 0.9, 0.85, 0.8, 0.75];
+
 /* ===============================
  * TSV 読み込み
  * =============================== */
@@ -28,31 +30,23 @@ function loadPokemons(path) {
   return tsv
     .split("\n")
     .map(line => line.trim())
-    .filter(line => line.length > 0)
+    .filter(Boolean)
     .map((line, index) => {
       const cols = line.split("\t");
       const rawProb = cols[2];
 
-      // 食材確率がない行（例: ピカチュウ(ハロウィン)）は除外
       if (!rawProb || !rawProb.endsWith("%")) {
-        console.error(
-          `WARN: ${index + 1}行目をスキップ（食材確率なし）: ${cols[0]}`
-        );
+        console.error(`WARN: ${index + 1}行目をスキップ: ${cols[0]}`);
         return null;
       }
 
       const 食材確率 = Number(rawProb.replace("%", "")) / 100;
       if (Number.isNaN(食材確率)) {
-        console.error(
-          `WARN: ${index + 1}行目をスキップ（数値変換失敗）: ${cols[0]}`
-        );
+        console.error(`WARN: ${index + 1}行目をスキップ: ${cols[0]}`);
         return null;
       }
 
-      return {
-        name: cols[0],
-        食材確率,
-      };
+      return { name: cols[0], 食材確率 };
     })
     .filter(Boolean);
 }
@@ -75,19 +69,18 @@ async function selectPokemon(pokemons) {
 }
 
 /* ===============================
- * ファイル保存（引数なし）
+ * 保存（引数なし）
  * =============================== */
-function saveResultToFile() {
-  const roundedMinutes = Math.round(分);
+function saveResultToFile(resultsByBonus) {
+  const result5 = resultsByBonus[5];
+  const roundedMinutes = Math.round(result5.totalMinutes);
 
-  const sanitizeFileName = (str) =>
-    str.replace(/[\\\/:*?"<>|]/g, "_");
-
-  const fileName = sanitizeFileName(
+  const sanitize = s => s.replace(/[\\\/:*?"<>|]/g, "_");
+  const fileName = sanitize(
     `${roundedMinutes}分_${pokemon.name}_${最大所持数}.txt`
   );
 
-  const text = `
+  let text = `
 === ポケモンスリープ 所持数計算ログ ===
 
 ■ ポケモン
@@ -98,7 +91,6 @@ function saveResultToFile() {
 性格補正: ×${性格補正}
 サブスキル 食材確率アップM: ${hasM ? "あり" : "なし"}（×${サブスキルM補正}）
 サブスキル 食材確率アップS: ${hasS ? "あり" : "なし"}（×${サブスキルS補正}）
-
 最終食材確率: ${(食材確率 * 100).toFixed(2)}%
 
 ■ 入力値
@@ -107,17 +99,22 @@ function saveResultToFile() {
 食材の個数: ${食材の個数}
 きのみの個数: ${きのみの個数}
 
-■ 計算結果
-1回あたりの獲得数: ${一回あたりの個数.toFixed(4)}
-合計時間: ${分.toFixed(2)} 分
-時間換算: ${時間} 時間 ${分残り.toFixed(2)} 分
+■ おてつだい回数
+${おてつだい回数} 回
 
-====================================
-`.trim() + "\n";
+■ おてつだいボーナス別結果
+`.trim() + "\n\n";
+
+  for (let i = 0; i <= 5; i++) {
+    const r = resultsByBonus[i];
+    text += `
+[おてつだいボーナス ${i} 個]
+合計時間: ${r.totalMinutes.toFixed(2)} 分
+時間換算: ${r.hours} 時間 ${r.minutes.toFixed(2)} 分
+`.trim() + "\n\n";
+  }
 
   fs.writeFileSync(fileName, text, "utf8");
-
-  // console 出力はファイル名のみ
   console.log(fileName);
 }
 
@@ -129,16 +126,14 @@ function saveResultToFile() {
     const pokemons = loadPokemons("./estimatedValueTable.tsv");
     pokemon = await selectPokemon(pokemons);
 
-    // --- 入力 ---
     最大所持数 = readlineSync.questionFloat("最大所持数: ");
     速度 = readlineSync.questionFloat("速度: ");
     食材の個数 = readlineSync.questionFloat("食材の個数: ");
     きのみの個数 = readlineSync.questionFloat("きのみの個数: ");
 
-    // --- 補正 ---
     const 性格選択 = readlineSync.keyInSelect(
       ["上昇", "下降", "無し"],
-      "性格による食材確率補正"
+      "性格補正"
     );
     性格補正 =
       性格選択 === -1
@@ -151,26 +146,33 @@ function saveResultToFile() {
     サブスキルM補正 = hasM ? サブスキル補正倍率.M : 1.0;
     サブスキルS補正 = hasS ? サブスキル補正倍率.S : 1.0;
 
-    // --- 計算 ---
     ベース食材確率 = pokemon.食材確率;
-
     食材確率 = Math.min(
-      ベース食材確率 *
-        性格補正 *
-        サブスキルM補正 *
-        サブスキルS補正,
+      ベース食材確率 * 性格補正 * サブスキルM補正 * サブスキルS補正,
       1.0
     );
 
     一回あたりの個数 =
       食材確率 * 食材の個数 + (1 - 食材確率) * きのみの個数;
 
-    分 = (最大所持数 / 一回あたりの個数) * (速度 / 2.222);
-    時間 = Math.floor(分 / 60);
-    分残り = 分 % 60;
+    // ★ 切り捨て
+    おてつだい回数 = Math.floor(最大所持数 / 一回あたりの個数);
 
-    // --- 保存 ---
-    saveResultToFile();
+    const resultsByBonus = {};
+
+    for (let i = 0; i <= 5; i++) {
+      const bonusRate = おてつだいボーナス補正[i];
+      const minutes =
+        おてつだい回数 * (速度 / 2.222) * bonusRate;
+
+      resultsByBonus[i] = {
+        totalMinutes: minutes,
+        hours: Math.floor(minutes / 60),
+        minutes: minutes % 60,
+      };
+    }
+
+    saveResultToFile(resultsByBonus);
 
   } catch (err) {
     console.error("ERROR:", err.message);
@@ -179,11 +181,11 @@ function saveResultToFile() {
 })();
 
 /* ===============================
- * グローバル変数（最小限）
+ * 共有変数
  * =============================== */
 let pokemon;
 let 最大所持数, 速度, 食材の個数, きのみの個数;
 let ベース食材確率, 食材確率;
 let 性格補正, サブスキルM補正, サブスキルS補正;
 let hasM, hasS;
-let 一回あたりの個数, 分, 時間, 分残り;
+let 一回あたりの個数, おてつだい回数;
