@@ -1,2 +1,3 @@
 ~/Documents/git/mobile/pokemon/sleep/interval
+~/Documents/git/mobile/pokemon/sleep/interval/result
 ~/Documents/git/mobile/pokemon/sleep/recovery
