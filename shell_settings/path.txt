@@ -1,3 +1,6 @@
+~/Documents/git/mobile/pokemon/sleep/daemon
 ~/Documents/git/mobile/pokemon/sleep/interval
-~/Documents/git/mobile/pokemon/sleep/interval/result
+~/Documents/git/mobile/pokemon/sleep/interval/result/1
+~/Documents/git/mobile/pokemon/sleep/interval/result/2
+~/Documents/git/mobile/pokemon/sleep/interval/result/3
 ~/Documents/git/mobile/pokemon/sleep/recovery
