@@ -19,8 +19,8 @@ function m() {
     bash state.sh
 }
 
-function m() {
+function r() {
     cd $DAEMON_PATH
-    bash update.sh
+    bash reflect.sh
 }
 
