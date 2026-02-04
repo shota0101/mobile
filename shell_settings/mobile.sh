@@ -16,11 +16,6 @@ function d() {
 
 function s() {
     cd $DAEMON_PATH
-    bash state.sh
-}
-
-function p() {
-    cd $DAEMON_PATH
     bash mark.sh
     bash state.sh
 }
@@ -30,7 +25,7 @@ function r() {
     bash reflect.sh
 }
 
-function to() {
+function t() {
     cd $TODO_PATH
     bash list.sh
 }
