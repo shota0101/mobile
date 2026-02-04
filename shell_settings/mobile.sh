@@ -30,7 +30,7 @@ function r() {
     bash reflect.sh
 }
 
-function t() {
+function to() {
     cd $TODO_PATH
     bash list.sh
 }
