@@ -88,7 +88,7 @@ while IFS='|' read -r due base; do
 		status="[あと${remaining_min}分]"
 	fi
 	
-	printf "%-20s %s %s\n" "$base" "$due_time" "$status"
+	printf "%s %s %s\n" "$base" "$due_time" "$status"
 done <<< "$sorted_records"
 
 exit 0

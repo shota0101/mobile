@@ -28,13 +28,15 @@ if [ "${#files[@]}" -eq 0 ]; then
 fi
 
 if command -v fzf >/dev/null 2>&1; then
-  # ベース名の一覧を fzf に渡して選択させる
-  selected=$(printf '%s\n' "${files[@]##*/}" | fzf --prompt="select config .txt: ")
-  if [ -z "${selected:-}" ]; then
+  # state.sh の出力を fzf に渡して選択させる
+  selected_line=$(bash "$SCRIPT_DIR/state.sh" | fzf --prompt="select config: ")
+  if [ -z "${selected_line:-}" ]; then
     echo "no selection"
     exit 1
   fi
-  target="$CONFIG_DIR/$selected"
+  # 選択された行から最初のフィールド（base）を抽出
+  base=$(echo "$selected_line" | awk '{print $1}')
+  target="$CONFIG_DIR/${base}.txt"
   touch "$target"
   echo "touched: $target"
 else
