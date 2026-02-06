@@ -9,16 +9,9 @@ alias upsh="source ~/.zshrc"
 DAEMON_PATH=~/Documents/git/mobile/pokemon/sleep/daemon
 TODO_PATH=~/Documents/git/todo
 
-function d() {
-    cd $DAEMON_PATH
-    bash daemon.sh
-}
-
-function s() {
-    cd $DAEMON_PATH
-    bash mark.sh
-    bash state.sh
-}
+alias d="bash ${DAEMON_PATH}/daemon.sh"
+alias s="bash ${DAEMON_PATH}/mark.sh ; bash ${DAEMON_PATH}/state.sh"
+alias p="bash ~/Documents/git/mobile/pokemon/tcg/12hourCheck.bash"
 
 function r() {
     cd $DAEMON_PATH
