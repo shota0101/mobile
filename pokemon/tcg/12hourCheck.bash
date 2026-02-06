@@ -1,33 +1,16 @@
 #!/bin/bash
 
+# スクリプトのディレクトリを取得
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # 共通関数を読み込み
-source "$(dirname "$0")/common.bash"
+source "$SCRIPT_DIR/common.bash"
 
 # 現在時刻を取得（秒単位）
 current_time=$(date +%s)
 
-# 12時間前の時刻（秒単位）
-twelve_hours_ago=$((current_time - 43200))
-
-# state/*.txtファイルを確認し、12時間以上経過しているものをリストアップ
-files_list=""
-for file in state/*; do
-    # ファイルが存在しない場合はスキップ
-    [ -e "$file" ] || continue
-    
-    # ファイルの最終更新時刻を取得
-    file_time=$(get_file_mtime "$file")
-    
-    # 12時間以上経過しているか確認
-    if [ "$file_time" -le "$twelve_hours_ago" ]; then
-        # ファイル名（拡張子無し）を取得
-        basename=$(basename "$file" .txt)
-        # 最終更新時刻をフォーマット
-        formatted_time=$(format_date "$file_time" '+%m月%d日 %H時%M分')
-        # リストに追加
-        files_list="${files_list}${basename} ${formatted_time}|${file}\n"
-    fi
-done
+# 12時間以上経過しているファイルを取得（--rawでパイプ用形式）
+files_list=$(bash "$SCRIPT_DIR/listExpiredFiles.bash" --raw)
 
 # 対象ファイルがない場合は終了
 if [ -z "$files_list" ]; then
@@ -36,7 +19,7 @@ if [ -z "$files_list" ]; then
 fi
 
 # fzfで選択
-selected=$(printf "%b" "$files_list" | fzf --delimiter="|" --with-nth=1 | cut -d'|' -f2)
+selected=$(echo "$files_list" | fzf --delimiter="|" --with-nth=1 | cut -d'|' -f2)
 
 # 選択されなかった場合は終了
 if [ -z "$selected" ]; then
