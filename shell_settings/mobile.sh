@@ -1,10 +1,16 @@
-function ca() {
+function j() {
     directory=`cat ~/Documents/git/mobile/shell_settings/path.txt | fzf`
     directory=${directory/\~/$HOME} # チルダをホームディレクトリに置換
     cd "${directory}"
 }
 
-alias upsh="source ~/.zshrc"
+LOCAL_COMMAND_LIST=~/Documents/git/mobile/shell_settings/terminal-mobile.sh
+t() {
+    cat \
+	~/Documents/git/company/memo/terminal.sh \
+	$LOCAL_COMMAND_LIST \
+	| fzf | tr -d '\n' | pbcopy
+}
 
 DAEMON_PATH=~/Documents/git/mobile/pokemon/sleep/daemon
 TCG_PATH=~/Documents/git/mobile/pokemon/tcg
@@ -19,7 +25,7 @@ function r() {
     bash reflect.sh
 }
 
-function t() {
+function o() {
     cd $TODO_PATH
     bash list.sh
 }

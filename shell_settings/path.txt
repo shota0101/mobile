@@ -4,3 +4,4 @@
 ~/Documents/git/mobile/pokemon/sleep/interval/result/2
 ~/Documents/git/mobile/pokemon/sleep/interval/result/3
 ~/Documents/git/mobile/pokemon/sleep/recovery
+~/Documents/git/mobile/pokemon/tcg
