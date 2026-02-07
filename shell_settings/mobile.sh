@@ -7,7 +7,6 @@ function j() {
 LOCAL_COMMAND_LIST=~/Documents/git/mobile/shell_settings/terminal-mobile.sh
 t() {
     cat \
-	~/Documents/git/company/memo/terminal.sh \
 	$LOCAL_COMMAND_LIST \
 	| fzf | tr -d '\n' | pbcopy
 }
