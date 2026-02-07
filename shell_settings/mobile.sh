@@ -7,7 +7,7 @@ function ca() {
 alias upsh="source ~/.zshrc"
 
 DAEMON_PATH=~/Documents/git/mobile/pokemon/sleep/daemon
-TCG_PATH=~/Documents/git/mobile/pokemon/sleep/daemon
+TCG_PATH=~/Documents/git/mobile/pokemon/tcg
 TODO_PATH=~/Documents/git/todo
 
 alias d="bash ${DAEMON_PATH}/daemon.sh"
