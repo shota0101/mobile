@@ -24,3 +24,5 @@ function h() {
     bash run.sh
 }
 
+bash ~/Documents/git/todo/listUnfinishedTasks.sh
+h
