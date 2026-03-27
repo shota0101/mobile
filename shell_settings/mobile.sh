@@ -12,9 +12,10 @@ tt() {
 }
 
 alias m="bash ~/Documents/git/todo/markAsDone.sh"
+alias r="bash ~/Documents/git/rotation/rotation.sh"
 
 DAEMON_PATH=~/Documents/git/mobile/pokemon/sleep/daemon
-function r() {
+function p() {
     cd $DAEMON_PATH
     bash reflect.sh
 }
