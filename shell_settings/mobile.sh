@@ -41,6 +41,7 @@ print_wifi_status() {
 
 alias m="bash ~/Documents/git/todo/markAsDone.sh"
 alias r="bash ~/Documents/git/rotation/rotation.sh"
+alias u="bash ~/Documents/git/company/script/pull-all.sh"
 
 DAEMON_PATH=~/Documents/git/mobile/pokemon/sleep/daemon
 function p() {
@@ -54,4 +55,5 @@ function h() {
 }
 
 bash ~/Documents/git/todo/listUnfinishedTasks.sh
+print_wifi_status
 
