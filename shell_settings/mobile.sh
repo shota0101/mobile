@@ -1,4 +1,4 @@
-function j() {
+j() {
     directory=`cat ~/Documents/git/mobile/shell_settings/path.txt | fzf`
     directory=${directory/\~/$HOME} # チルダをホームディレクトリに置換
     cd "${directory}"
@@ -9,6 +9,34 @@ tt() {
     cat \
 	$LOCAL_COMMAND_LIST \
 	| fzf | tr -d '\n' | pbcopy
+}
+
+# Wi-Fi接続状態を表示
+print_wifi_status() {
+    # termux-wifi-connectioninfoコマンドでWi-Fi接続状態を取得
+    if ! command -v termux-wifi-connectioninfo &> /dev/null; then
+        echo '❌termux-wifi-connectioninfoコマンド無し'
+    fi
+
+    local wifi_info
+    wifi_info=$(termux-wifi-connectioninfo 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        echo '❌termux-wifi-connectioninfoコマンド実行エラー'
+    fi
+
+    # JSONからbssidとipを抽出して接続状態を判定
+    local bssid
+    local ip
+    bssid=$(echo "$wifi_info" | grep -o '"bssid": *"[^"]*"' | cut -d'"' -f4)
+    ip=$(echo "$wifi_info" | grep -o '"ip": *"[^"]*"' | cut -d'"' -f4)
+
+    # bssidがnullでなく、ipが0.0.0.0でもない場合は接続されている
+    if [ -n "$bssid" ] && [ "$bssid" != "null" ] && [ "$ip" != "0.0.0.0" ]; then
+        echo '✅Wi-Fi接続確認完了'
+	return
+    fi
+
+    echo '❌Wi-Fi接続確認できませんでした'
 }
 
 alias m="bash ~/Documents/git/todo/markAsDone.sh"
@@ -26,4 +54,4 @@ function h() {
 }
 
 bash ~/Documents/git/todo/listUnfinishedTasks.sh
-h
+
