@@ -41,17 +41,12 @@ print_wifi_status() {
 
 alias m="bash ~/Documents/git/todo/markAsDone.sh"
 alias r="bash ~/Documents/git/rotation/rotation.sh"
-alias u="bash ~/Documents/git/company/script/pull-all.sh"
+alias gall="bash ~/Documents/git/company/script/pull-all.sh"
 
 DAEMON_PATH=~/Documents/git/mobile/pokemon/sleep/daemon
 function p() {
     cd $DAEMON_PATH
     bash reflect.sh
-}
-
-function h() {
-    cd ~/Documents/git/household-accounts/
-    bash run.sh
 }
 
 bash ~/Documents/git/todo/listUnfinishedTasks.sh
