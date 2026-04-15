@@ -26,6 +26,52 @@ function collectPhotos {
     echo "↑----- ${src/$HOME/\~} -----↑"
 }
 
+function classifyLandscapeImages {
+    local new_files="$1"
+    local source_dir="$2"
+    
+    if [ -z "$new_files" ]; then
+        echo "新しいファイルはありません"
+        return
+    fi
+    
+    # imagemagickの確認
+    if ! command -v identify &> /dev/null; then
+        echo "⚠️  ImageMagick (identify) がインストールされていません。横長画像の分類をスキップします"
+        return
+    fi
+    
+    echo "↓----- Classifying landscape images -----↓"
+    while IFS= read -r file; do
+        [ -z "$file" ] && continue
+        
+        file_path="${source_dir}${file}"
+        
+        # ファイルが存在することを確認
+        if [ ! -f "$file_path" ]; then
+            continue
+        fi
+        
+        # 画像の横幅と縦幅を取得
+        dimensions=$(identify -format "%wx%h" "$file_path" 2>/dev/null)
+        if [ -z "$dimensions" ]; then
+            continue
+        fi
+        
+        width=$(echo "$dimensions" | cut -d'x' -f1)
+        height=$(echo "$dimensions" | cut -d'x' -f2)
+        
+        # 横長（width > height）であれば landscape フォルダに移動
+        if [ "$width" -gt "$height" ]; then
+            mkdir -p ~/storage/pictures/master/landscape
+            # スペースを含むファイル名に対応
+            mv "$file_path" ~/storage/pictures/master/landscape/"$file"
+            echo "  ✓ ${file} (${width}x${height}) を landscape に移動"
+        fi
+    done <<< "$new_files"
+    echo "↑----- Classifying landscape images -----↑"
+}
+
 dst=~/storage/pictures/life/
 
 service=whats-app
@@ -42,6 +88,11 @@ collectPhotos
 src=~/storage/movies/LINE
 collectPhotos
 
+echo "↓----- Checking files before -----↓"
+ls ~/storage/pictures/master/cross/ > ~/storage/pictures/master/checkCrossBefore.txt
+echo "✓ Saved to checkCrossBefore.txt"
+echo "↑----- Checking files before -----↑"
+
 dst=~/storage/pictures/master/cross/
 
 service=pixiv
@@ -55,6 +106,16 @@ collectPhotos
 echo "↓----- twitter -----↓"
 sh "${SCRIPT_DIR}"renameTwitterImages.sh $dst
 echo "↑----- twitter -----↑"
+
+echo "↓----- Checking files after -----↓"
+ls ~/storage/pictures/master/cross/ > ~/storage/pictures/master/checkCrossAfter.txt 2>/dev/null || echo "" > ~/storage/pictures/master/checkCrossAfter.txt
+echo "✓ Saved to checkCrossAfter.txt"
+echo "↑----- Checking files after -----↑"
+
+# 新しく追加されたファイルを抽出
+new_files=$(diff ~/storage/pictures/master/checkCrossBefore.txt ~/storage/pictures/master/checkCrossAfter.txt | grep "^>" | sed 's/^> //')
+
+classifyLandscapeImages "$new_files" ~/storage/pictures/master/cross/
 
 echo "TODO: LINEのデータの名前変換とバックアップ処理"
 echo "↓----- ~/storage/pictures/LINE -----↓"
