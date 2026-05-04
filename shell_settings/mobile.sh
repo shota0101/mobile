@@ -63,5 +63,5 @@ echo "m : mark tasks as done"
 alias m="bash ~/Documents/git/todo/markAsDone.sh"
 bash ~/Documents/git/todo/listUnfinishedTasks.sh
 
-print_wifi_status
+print_wifi_status &
 
