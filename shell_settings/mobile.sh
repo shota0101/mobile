@@ -39,27 +39,27 @@ print_wifi_status() {
     echo '❌Wi-Fi接続確認できませんでした'
 }
 
-echo "p : Pokémon Sleep"
+echo "p   : Pokémon Sleep"
 function p() {
     cd ~/Documents/git/mobile/pokemon/sleep/daemon
     bash reflect.sh
 }
 
-echo "r\t: rotation"
+echo "r   : rotation"
 alias r="bash ~/Documents/git/rotation/rotation.sh"
 
-echo "lt\t: log temperature"
+echo "lt  : log temperature"
 alias lt="bash ~/Documents/git/temperature/log.bash"
-echo "ss\t: sleep suggest"
+echo "ss  : sleep suggest"
 alias ss="bash ~/Documents/git/temperature/search.bash"
 
-echo "gpa\t: git pull all"
+echo "gpa : git pull all"
 alias gall="bash ~/Documents/git/company/script/pull-all.sh"
 
-echo "om\t: organize media"
+echo "om  : organize media"
 alias media="bash ~/Documents/git/mobile/organizeMedia/organizeAndroidMediaFiles.sh"
 
-echo "m\t: mark tasks as done"
+echo "m   : mark tasks as done"
 alias m="bash ~/Documents/git/todo/markAsDone.sh"
 bash ~/Documents/git/todo/listUnfinishedTasks.sh
 
