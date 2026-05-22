@@ -20,6 +20,18 @@ const サブスキル補正倍率 = {
 };
 
 const おてつだいボーナス補正 = [1.0, 0.95, 0.9, 0.85, 0.8, 0.75];
+const 一緒に眠った時間Options = [
+  { key: "0", value: "0000時間" },
+  { key: "1", value: "0200時間" },
+  { key: "2", value: "0500時間" },
+  { key: "3", value: "1000時間" },
+  { key: "4", value: "2000時間" },
+];
+const 性格補正ByInput = {
+  u: 性格補正倍率.上昇,
+  d: 性格補正倍率.下降,
+  "": 性格補正倍率.無し,
+};
 
 /* ===============================
  * TSV 読み込み
@@ -69,6 +81,86 @@ async function selectPokemon(pokemons) {
 }
 
 /* ===============================
+ * 性格補正入力
+ * =============================== */
+function questionNatureModifier() {
+  while (true) {
+    const input = readlineSync.question("性格補正 (u=上昇, d=下降, Enter=無し): ").trim().toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(性格補正ByInput, input)) {
+      return 性格補正ByInput[input];
+    }
+
+    console.log("u, d, 空文字のいずれかで入力してください");
+  }
+}
+
+/* ===============================
+ * Yes/No 入力
+ * =============================== */
+function questionYesNoDefaultNo(message) {
+  while (true) {
+    const input = readlineSync.question(`${message} (y/N): `).trim().toLowerCase();
+    if (input === "") {
+      return false;
+    }
+    if (input === "y") {
+      return true;
+    }
+    if (input === "n") {
+      return false;
+    }
+
+    console.log("y, n, 空文字のいずれかで入力してください");
+  }
+}
+
+/* ===============================
+ * 食材の個数入力
+ * =============================== */
+function questionAverageIngredientCount() {
+  const labels = ["1つめ", "2つめ", "3つめ"];
+
+  while (true) {
+    const values = labels
+      .map(label => readlineSync.question(`食材の個数（${label}）: `).trim())
+      .filter(input => input !== "")
+      .map(input => Number(input));
+
+    if (values.length === 0) {
+      console.log("食材の個数を1つ以上入力してください");
+      continue;
+    }
+
+    if (values.some(Number.isNaN)) {
+      console.log("食材の個数は数値で入力してください");
+      continue;
+    }
+
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+  }
+}
+
+/* ===============================
+ * 一緒に眠った時間入力
+ * =============================== */
+function questionSleepTime() {
+  while (true) {
+    console.log("一緒に眠った時間:");
+    一緒に眠った時間Options.forEach(option => {
+      console.log(`  ${option.key}: ${option.value}`);
+    });
+
+    const input = readlineSync.question("番号を選択してください: ").trim();
+    const selectedOption = 一緒に眠った時間Options.find(option => option.key === input);
+    if (selectedOption) {
+      return selectedOption.value;
+    }
+
+    console.log("0〜4の番号で入力してください");
+  }
+}
+
+/* ===============================
  * 保存（引数なし）
  * =============================== */
 function saveResultToFile(resultsByBonus) {
@@ -77,7 +169,7 @@ function saveResultToFile(resultsByBonus) {
 
   const sanitize = s => s.replace(/[\\\/:*?"<>|]/g, "_");
   const fileName = sanitize(
-    `${roundedMinutes}分_${pokemon.name}_${最大所持数}.txt`
+    `${roundedMinutes}分_Lv${Lv}_${一緒に眠った時間}_${pokemon.name}.txt`
   );
 
   let text = `
@@ -95,8 +187,10 @@ function saveResultToFile(resultsByBonus) {
 
 ■ 入力値
 最大所持数: ${最大所持数}
+Lv: ${Lv}
+一緒に眠った時間: ${一緒に眠った時間}
 速度: ${速度}
-食材の個数: ${食材の個数}
+食材の個数（平均）: ${食材の個数}
 きのみの個数: ${きのみの個数}
 
 ■ おてつだい回数
@@ -128,20 +222,15 @@ ${おてつだい回数} 回
 
     最大所持数 = readlineSync.questionFloat("最大所持数: ");
     速度 = readlineSync.questionFloat("速度: ");
-    食材の個数 = readlineSync.questionFloat("食材の個数: ");
+    食材の個数 = questionAverageIngredientCount();
     きのみの個数 = readlineSync.questionFloat("きのみの個数: ");
 
-    const 性格選択 = readlineSync.keyInSelect(
-      ["上昇", "下降", "無し"],
-      "性格補正"
-    );
-    性格補正 =
-      性格選択 === -1
-        ? 性格補正倍率.無し
-        : 性格補正倍率[["上昇", "下降", "無し"][性格選択]];
+    性格補正 = questionNatureModifier();
 
-    hasM = readlineSync.keyInYN("サブスキル 食材確率アップM は付いていますか？");
-    hasS = readlineSync.keyInYN("サブスキル 食材確率アップS は付いていますか？");
+    hasM = questionYesNoDefaultNo("サブスキル 食材確率アップM は付いていますか？");
+    hasS = questionYesNoDefaultNo("サブスキル 食材確率アップS は付いていますか？");
+    Lv = readlineSync.questionInt("Lv: ");
+    一緒に眠った時間 = questionSleepTime();
 
     サブスキルM補正 = hasM ? サブスキル補正倍率.M : 1.0;
     サブスキルS補正 = hasS ? サブスキル補正倍率.S : 1.0;
@@ -184,7 +273,7 @@ ${おてつだい回数} 回
  * 共有変数
  * =============================== */
 let pokemon;
-let 最大所持数, 速度, 食材の個数, きのみの個数;
+let 最大所持数, Lv, 一緒に眠った時間, 速度, 食材の個数, きのみの個数;
 let ベース食材確率, 食材確率;
 let 性格補正, サブスキルM補正, サブスキルS補正;
 let hasM, hasS;
