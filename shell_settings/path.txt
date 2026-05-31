@@ -1,4 +1,7 @@
+~/storage/shared/Documents/keepass
 ~/storage/shared/Documents/keepass/shota-keepass
+~/storage/shared/Documents/keepass/hayashi-keepass
+~/Documents/git/mobile/shell_settings
 ~/Documents/git/mobile/pokemon/sleep/interval
 ~/Documents/git/mobile/pokemon/sleep/recovery
 ~/Documents/git/mobile/pokemon/tcg
